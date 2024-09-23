@@ -39,8 +39,8 @@ func initApp(contextContext context.Context, bootstrap *conf.Bootstrap, clientCl
 	messageXHttpClient := data.NewMessageXHttpClient(clientClient, bootstrap)
 	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, messageXHttpClient)
 	recipientRepo := data.NewRecipientRepo(databaseMessage)
-	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, messageRepo, recipientRepo)
-	campaignApi := api.NewCampaignApi(campaignUsecase, messageUsecase, logger)
+	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, campaignRepo, messageRepo, recipientRepo)
+	campaignApi := api.NewCampaignApi(campaignUsecase, campaignRepo, messageUsecase, logger)
 	messageApi := api.NewMessageApi(messageUsecase, logger)
 	systemApi := api.NewSystemApi(logger)
 	router := server.InitHTTPRouter(httpServer, campaignApi, messageApi, systemApi)
@@ -60,6 +60,7 @@ func InitDemo(clientClient client.Client) (*biz.MessageUsecase, func(), error) {
 		return nil, nil, err
 	}
 	transactionMessageRepo := data.NewTransactionMessageRepo(databaseMessage, logger)
+	campaignRepo := data.NewCampaignRepo(databaseMessage)
 	producerMessage, cleanup2, err := data.NewProducerMessage(contextContext, bootstrap, logger)
 	if err != nil {
 		cleanup()
@@ -68,7 +69,7 @@ func InitDemo(clientClient client.Client) (*biz.MessageUsecase, func(), error) {
 	messageXHttpClient := data.NewMessageXHttpClient(clientClient, bootstrap)
 	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, messageXHttpClient)
 	recipientRepo := data.NewRecipientRepo(databaseMessage)
-	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, messageRepo, recipientRepo)
+	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, campaignRepo, messageRepo, recipientRepo)
 	return messageUsecase, func() {
 		cleanup2()
 		cleanup()

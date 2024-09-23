@@ -4,7 +4,7 @@ triggers:
   - '**/*.go'
   env:
     DEBUG: "1"
-  cmd: go build -o ./bin/ ./cmd/script && ./bin/script -conf configs/config.yaml -cmd CalulateRank -args '2023-09-24'
+  cmd: go build -o ./bin/ ./cmd/script && ./bin/script -conf configs/config.yaml -cmd ScanMessage -args '2023-09-24'
   #cmd: go build -o ./bin/ ./cmd/script && ./bin/script -conf configs/config.yaml -cmd SyncUserByUserID -args 'aaaa,bbb'
   shell: true
   delay: 100ms

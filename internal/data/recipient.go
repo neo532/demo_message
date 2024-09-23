@@ -25,6 +25,7 @@ func NewRecipientRepo(
 func (r *RecipientRepo) CreateByMessage(c context.Context, ds []*entity.Message) (err error) {
 	l := len(ds)
 
+	// assmable
 	data := make([]*db.Recipient, 0, l)
 	for _, d := range ds {
 		if d.Recipient == nil {
@@ -40,10 +41,13 @@ func (r *RecipientRepo) CreateByMessage(c context.Context, ds []*entity.Message)
 		return mobile + name
 	}
 
+	// create
 	err = r.db.Write(c).
 		WithContext(c).
 		Create(data).
 		Error
+
+	// query insIDs
 	rs := make(map[string]int64, l)
 	emptyIDs := make([]string, 0, l)
 	for _, d := range data {
@@ -54,14 +58,16 @@ func (r *RecipientRepo) CreateByMessage(c context.Context, ds []*entity.Message)
 		rs[key(d.Mobile, d.Name)] = d.ID
 	}
 	var emptys []*db.Recipient
-	if err = r.db.Read(c).
-		WithContext(c).
-		Select("id", "mobile", "name").
-		Where("mobile in ?", emptyIDs).
-		Find(&emptys).
-		Error; err == nil && emptys != nil {
-		for _, e := range emptys {
-			rs[key(e.Mobile, e.Name)] = e.ID
+	if len(emptyIDs) > 0 {
+		if err = r.db.Read(c).
+			WithContext(c).
+			Select("id", "mobile", "name").
+			Where("mobile in ?", emptyIDs).
+			Find(&emptys).
+			Error; err == nil && emptys != nil {
+			for _, e := range emptys {
+				rs[key(e.Mobile, e.Name)] = e.ID
+			}
 		}
 	}
 

@@ -13,6 +13,7 @@ type TransactionMessageRepo interface {
 type CampaignRepo interface {
 	Create(c context.Context, cps *entity.Campaign) (insID int64, err error)
 	UpdateStatus(c context.Context, ID int64, status int) (err error)
+	IsImmediately(c context.Context, d *entity.Campaign) (b bool)
 }
 
 type RecipientRepo interface {
@@ -24,5 +25,5 @@ type MessageRepo interface {
 	PushQueue(c context.Context, msg []*entity.Message) (err error)
 	Send(c context.Context, msg []*entity.Message) (succIDs, failIDs []int64, err error)
 	SaveStatus(c context.Context, IDs []int64, status int) (err error)
-	ScanToSend(c context.Context) (msgs []*entity.Message, err error)
+	ScanToSend(c context.Context, limit, offset int) (rs []*entity.Message, err error)
 }

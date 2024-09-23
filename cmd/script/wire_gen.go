@@ -27,6 +27,7 @@ func initApp(contextContext context.Context, arg chan struct{}, arg2 []string, b
 		return nil, nil, err
 	}
 	transactionMessageRepo := data.NewTransactionMessageRepo(databaseMessage, logger)
+	campaignRepo := data.NewCampaignRepo(databaseMessage)
 	producerMessage, cleanup2, err := data.NewProducerMessage(contextContext, bootstrap, logger)
 	if err != nil {
 		cleanup()
@@ -35,7 +36,7 @@ func initApp(contextContext context.Context, arg chan struct{}, arg2 []string, b
 	messageXHttpClient := data.NewMessageXHttpClient(clientClient, bootstrap)
 	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, messageXHttpClient)
 	recipientRepo := data.NewRecipientRepo(databaseMessage)
-	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, messageRepo, recipientRepo)
+	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, campaignRepo, messageRepo, recipientRepo)
 	messageScript := script.NewMessageScript(messageUsecase, logger)
 	serverScript := server.NewScript(arg2, arg, logger, messageScript)
 	app := newApp(contextContext, bootstrap, logger, serverScript)

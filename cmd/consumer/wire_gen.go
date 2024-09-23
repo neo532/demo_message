@@ -27,6 +27,7 @@ func initApp(contextContext context.Context, bootstrap *conf.Bootstrap, clientCl
 		return nil, nil, err
 	}
 	transactionMessageRepo := data.NewTransactionMessageRepo(databaseMessage, logger)
+	campaignRepo := data.NewCampaignRepo(databaseMessage)
 	producerMessage, cleanup2, err := data.NewProducerMessage(contextContext, bootstrap, logger)
 	if err != nil {
 		cleanup()
@@ -35,7 +36,7 @@ func initApp(contextContext context.Context, bootstrap *conf.Bootstrap, clientCl
 	messageXHttpClient := data.NewMessageXHttpClient(clientClient, bootstrap)
 	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, messageXHttpClient)
 	recipientRepo := data.NewRecipientRepo(databaseMessage)
-	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, messageRepo, recipientRepo)
+	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, campaignRepo, messageRepo, recipientRepo)
 	messageConsumer := consumer.NewMessageConsumer(messageUsecase, logger)
 	queueConsumer := server.NewConsumerMessage(contextContext, bootstrap, logger, messageConsumer)
 	app := newApp(contextContext, bootstrap, logger, queueConsumer)

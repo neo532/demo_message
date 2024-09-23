@@ -23,7 +23,7 @@ func NewMessageScript(
 	}
 }
 
-func (s *MessageScript) Push(c context.Context, args string) (err error) {
+func (s *MessageScript) ScanMessage(c context.Context, args string) (err error) {
 	err = s.msg.ScanMessage(c)
 	return
 }

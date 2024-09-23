@@ -39,8 +39,8 @@ func (s *Script) Start(c context.Context) (err error) {
 	s.startTime = time.Now()
 
 	switch s.arguments[0] {
-	case "Get":
-		err = s.msg.Push(c, s.arguments[1])
+	case "ScanMessage":
+		err = s.msg.ScanMessage(c, s.arguments[1])
 	default:
 		err = errors.Errorf("Invaild command![args:%+v]", s.arguments)
 	}

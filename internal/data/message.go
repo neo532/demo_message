@@ -17,6 +17,7 @@ import (
 	"demo_message/internal/biz/repo"
 	"demo_message/internal/data/db"
 	message "demo_message/proto/client/message/v1"
+	"demo_message/util"
 )
 
 type MessageRepo struct {
@@ -47,7 +48,7 @@ func (r *MessageRepo) Create(c context.Context, ds []*entity.Message) (insIDs []
 		data = append(data, &db.Message{
 			CampaignID:  d.CampaignID,
 			RecipientID: d.RecipientID,
-			Status:      db.MessageStatusToSend,
+			Status:      d.Status,
 			// Recipient: &db.Recipient{
 			// 	Mobile: d.Recipient.Mobile,
 			// 	Name:   d.Recipient.Name,
@@ -151,44 +152,53 @@ func (r *MessageRepo) SaveStatus(c context.Context, oIDs []int64, status int) (e
 	return
 }
 
-func (r *MessageRepo) ScanToSend(c context.Context) (rs []*entity.Message, err error) {
-	rs = make([]*entity.Message, 0, 5)
+func (r *MessageRepo) ScanToSend(c context.Context, limit, offset int) (rs []*entity.Message, err error) {
+	rs = make([]*entity.Message, 0, limit)
 
 	var ds []*db.Message
 	err = r.db.Read(c).
 		WithContext(c).
 		Select("id", "campaign_id", "recipient_id").
 		Order("id desc").
-		Limit(1000).
-		Joins("left join campaign as c on c.id=message.campaign_id").
-		Where("c.status=? and c.time_send>? and message.status=?", db.CampaignStatusOn, time.Now().Format(time.DateTime), db.MessageStatusToSend).
-		Preload("Campaign", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "message")
+		Limit(limit).
+		Offset(offset).
+		Where("status=?", db.MessageStatusToSend).
+		Preload("Campaign", func(odb *gorm.DB) *gorm.DB {
+			return odb.
+				Select("id", "message").
+				Where("status=? and time_send>?", db.CampaignStatusOn, time.Now().Format(time.DateTime))
 		}).
 		Preload("Recipient", func(db *gorm.DB) *gorm.DB {
-			return db.Select("mobile", "name")
+			return db.Select("id", "mobile", "name")
 		}).
 		Find(&ds).
 		Error
 	if err != nil {
 		return
 	}
+	badIDs := make([]int64, 0, len(ds))
 	for _, v := range ds {
+		if v.Campaign == nil || v.Recipient == nil {
+			badIDs = append(badIDs, v.ID)
+			continue
+		}
 		row := &entity.Message{
 			ID: v.ID,
-		}
-		if v.Campaign != nil {
-			row.Campaign = &entity.Campaign{
+			Campaign: &entity.Campaign{
 				Message: v.Campaign.Message,
-			}
-		}
-		if v.Recipient != nil {
-			row.Recipient = &entity.Recipient{
+			},
+			Recipient: &entity.Recipient{
 				Mobile: v.Recipient.Mobile,
 				Name:   v.Recipient.Name,
-			}
+			},
 		}
 		rs = append(rs, row)
+	}
+
+	if len(badIDs) > 0 {
+		if er := r.SaveStatus(c, badIDs, db.MessageStatusBadMessage); er != nil {
+			err = util.WrapErr(err, er)
+		}
 	}
 	return
 }

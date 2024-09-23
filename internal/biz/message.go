@@ -2,7 +2,6 @@ package biz
 
 import (
 	"context"
-	"time"
 
 	"demo_message/internal/biz/entity"
 	"demo_message/internal/biz/repo"
@@ -14,6 +13,7 @@ import (
 
 type MessageUsecase struct {
 	tx        repo.TransactionMessageRepo
+	cp        repo.CampaignRepo
 	msg       repo.MessageRepo
 	rcp       repo.RecipientRepo
 	queueSize int
@@ -21,11 +21,13 @@ type MessageUsecase struct {
 
 func NewMessageUsecase(
 	tx repo.TransactionMessageRepo,
+	cp repo.CampaignRepo,
 	msg repo.MessageRepo,
 	rcp repo.RecipientRepo,
 ) *MessageUsecase {
 	return &MessageUsecase{
 		tx:        tx,
+		cp:        cp,
 		msg:       msg,
 		rcp:       rcp,
 		queueSize: 10,
@@ -34,11 +36,7 @@ func NewMessageUsecase(
 
 func (uc *MessageUsecase) Create(c context.Context, cp *entity.Campaign, msgs []*entity.Message) (err error) {
 
-	buf := time.Now().Add(60 * time.Second)
-	var isImmediately bool
-	if cp.TimeSend.Before(buf) {
-		isImmediately = true
-	}
+	isImmediately := uc.cp.IsImmediately(c, cp)
 
 	tool.PageExec(int64(len(msgs)), uc.queueSize, func(begin, end int64, page int) (er error) {
 		ms := msgs[begin:end]
@@ -100,22 +98,25 @@ func (uc *MessageUsecase) Send(c context.Context, msgs []*entity.Message) (err e
 func (uc *MessageUsecase) ScanMessage(c context.Context) (err error) {
 
 	var msgs []*entity.Message
-	msgs, err = uc.msg.ScanToSend(c)
-	if err != nil {
-		return
-	}
-
-	tool.PageExec(int64(len(msgs)), uc.queueSize, func(begin, end int64, page int) (er error) {
-
-		ms := msgs[begin:end]
-		if er = uc.msg.PushQueue(c, ms); er != nil {
+	pageSize := 1000
+	for i := 0; ; i += pageSize {
+		msgs, err = uc.msg.ScanToSend(c, pageSize, i)
+		if len(msgs) == 0 || err != nil {
 			return
 		}
-		if er != nil {
-			err = util.WrapErr(err, er)
-		}
-		return
-	})
+
+		tool.PageExec(int64(len(msgs)), uc.queueSize, func(begin, end int64, page int) (er error) {
+
+			ms := msgs[begin:end]
+			if er = uc.msg.PushQueue(c, ms); er != nil {
+				return
+			}
+			if er != nil {
+				err = util.WrapErr(err, er)
+			}
+			return
+		})
+	}
 
 	return
 }

@@ -17,6 +17,8 @@ import (
 
 	"demo_message/internal/biz"
 	"demo_message/internal/biz/entity"
+	"demo_message/internal/biz/repo"
+	"demo_message/internal/data/db"
 	"demo_message/util"
 
 	pb "demo_message/proto/api/campaign/v1"
@@ -24,6 +26,7 @@ import (
 
 type CampaignApi struct {
 	uc  *biz.CampaignUsecase
+	cp  repo.CampaignRepo
 	msg *biz.MessageUsecase
 	log *log.Helper
 	tag string
@@ -31,11 +34,13 @@ type CampaignApi struct {
 
 func NewCampaignApi(
 	uc *biz.CampaignUsecase,
+	cp repo.CampaignRepo,
 	msg *biz.MessageUsecase,
 	logger klog.Logger,
 ) *CampaignApi {
 	return &CampaignApi{
 		uc:  uc,
+		cp:  cp,
 		msg: msg,
 		log: log.NewHelper(logger),
 		tag: "api.CampaignApi",
@@ -59,6 +64,7 @@ func (a *CampaignApi) Post(c context.Context, req *pb.PostRequest) (reply *pb.Po
 			return
 		}
 	}
+	messageStatus := db.MessageStatusToSend
 	reply.Id, err = a.uc.Create(c, cp)
 
 	// message
@@ -98,6 +104,7 @@ func (a *CampaignApi) Post(c context.Context, req *pb.PostRequest) (reply *pb.Po
 			Campaign: &entity.Campaign{
 				Message: strings.Trim(attr[1], `"`),
 			},
+			Status: messageStatus,
 		}
 		msgs = append(msgs, row)
 		if len(msgs) == pageSize {

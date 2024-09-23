@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"time"
 
 	"github.com/neo532/gokit/database/orm"
 
@@ -51,6 +52,14 @@ func (r *CampaignRepo) UpdateStatus(c context.Context, ID int64, status int) (er
 		Error
 	if err != nil {
 		return
+	}
+	return
+}
+
+func (r *CampaignRepo) IsImmediately(c context.Context, d *entity.Campaign) (b bool) {
+	buf := time.Now().Add(60 * time.Second)
+	if !d.TimeSend.IsZero() && d.TimeSend.Before(buf) {
+		return true
 	}
 	return
 }
