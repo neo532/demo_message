@@ -1,0 +1,15 @@
+triggers:
+- name: cmd/consumer
+  pattens:
+  - '**/*.go'
+  env:
+    DEBUG: "1"
+  cmd: go build -o ./bin/ ./cmd/consumer && ./bin/consumer -conf configs/config.yaml
+  shell: true
+  delay: 100ms
+  stop_timeout: 500ms
+  signal: KILL
+  kill_signal: "SIGTERM"
+watch_paths:
+- .
+watch_depth: 5

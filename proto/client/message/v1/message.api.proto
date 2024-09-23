@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package client.message.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "client/message/v1;v1";
+
+service Message {
+
+    // Send
+	rpc Send (SendRequest) returns (SendReply){
+        option (google.api.http)={
+            get: "/ping"
+            requestEncoder: "RequestEncoder"
+        };
+    };
+}
+
+// Send
+message SendRequest {
+    string mobile = 1; // @inject_tag: json:"mobile"
+    string message = 2; 
+}
+message SendReply {
+    string msg = 1;
+    int32 code = 2;
+}

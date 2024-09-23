@@ -1,0 +1,75 @@
+general:
+  env: dev
+  name: demo_message
+  logger:
+    level: debug
+    filename: ./log/business.log
+    max_size: 10
+    max_backup: 5
+    max_age: 7
+    compress: false
+    filename_script: ./log/script.log
+    filename_consumer: ./log/consumer.log
+    filename_test: ./log/test.log
+
+
+server:
+  http:
+    addr: 0.0.0.0:8500
+    timeout: 3s
+
+
+data:
+  database_message:
+    conf:
+      max_open_conns: 2
+      max_idle_conns: 2
+      conn_max_lifetime: 2s
+      max_slowtime: 0.5s
+      table_prefix: mg_
+      read:
+        name: "message_read"
+        dsn: root:12345678@tcp(127.0.0.1:3306)/message?charset=utf8mb4&parseTime=true&loc=Local
+      write:
+        name: "message_write"
+        dsn: root:12345678@tcp(127.0.0.1:3306)/message?charset=utf8mb4&parseTime=true&loc=Local
+
+
+
+  redis_lock:
+    conf:
+      max_slowtime: 0.5s
+      default:
+        name: lock
+        db: 0
+        addr: test.domain:6379
+        password: password
+
+
+  producer_message:
+    conf:
+      default:
+        name: "default"
+        topic: "message"
+        idempotent: true
+        netMaxOpenRequest: 1
+        addrs:
+          - "127.0.0.1:9092"
+
+
+  consumer_message:
+    conf:
+      max_slowtime: 1s
+      default:
+        name: "default"
+        group: "sender"
+        topics:
+          - "message"
+        addrs:
+          - "127.0.0.1:9092"
+
+
+
+third:
+  message:
+    domain: http://127.0.0.1:8500

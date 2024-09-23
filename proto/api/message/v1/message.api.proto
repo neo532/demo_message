@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package message.v1;
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "api/message/v1;v1";
+
+service Message {
+
+    // Post
+	rpc Post (PostRequest) returns (google.protobuf.Empty){
+        option (google.api.http)={
+            post: "/message"
+            body: "*"
+        };
+    };
+
+    // status
+	rpc PutStatus (PutStatusRequest) returns (google.protobuf.Empty){
+        option (google.api.http)={
+            put: "/message/{id}/status"
+            body: "*"
+        };
+    };
+}
+
+// Post
+message PostRequest {
+	int32 originType = 1 [(validate.rules).int32 = {in:[1,2]}];
+	string originContent = 2 [(validate.rules).string = {min_len:1,max_len:200}];
+}
+
+// PutStatus
+message PutStatusRequest {
+    int64 id = 1 [(validate.rules).int64 = {gt:0}];
+	int32 status = 2 [(validate.rules).int32 = {in:[1,2]}];
+}
