@@ -65,6 +65,9 @@ func (a *CampaignApi) Post(c context.Context, req *pb.PostRequest) (reply *pb.Po
 		}
 	}
 	messageStatus := db.MessageStatusToSend
+	if a.cp.IsImmediately(c, cp) {
+		messageStatus = db.MessageStatusSendMessage
+	}
 	reply.Id, err = a.uc.Create(c, cp)
 
 	// message

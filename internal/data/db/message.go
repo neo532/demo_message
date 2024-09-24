@@ -18,8 +18,9 @@ type Message struct {
 }
 
 const (
-	MessageStatusToSend     = 1
-	MessageStatusSended     = 2
-	MessageStatusSendFail   = 3
-	MessageStatusBadMessage = 4
+	MessageStatusToSend      = 1
+	MessageStatusSended      = 2
+	MessageStatusSendFail    = 3
+	MessageStatusBadMessage  = 4
+	MessageStatusSendMessage = 5
 )

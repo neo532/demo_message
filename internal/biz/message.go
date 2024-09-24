@@ -107,13 +107,26 @@ func (uc *MessageUsecase) ScanMessage(c context.Context) (err error) {
 
 		tool.PageExec(int64(len(msgs)), uc.queueSize, func(begin, end int64, page int) (er error) {
 
-			ms := msgs[begin:end]
-			if er = uc.msg.PushQueue(c, ms); er != nil {
+			er = uc.tx.Transaction(c, func(ctx context.Context) (e error) {
+
+				ms := msgs[begin:end]
+
+				IDs := make([]int64, 0, uc.queueSize)
+				for _, v := range ms {
+					IDs = append(IDs, v.ID)
+				}
+				if e = uc.msg.SaveStatus(c, IDs, db.MessageStatusSendMessage); e != nil {
+					return
+				}
+
+				if e = uc.msg.PushQueue(c, ms); e != nil {
+					return
+				}
+				if e != nil {
+					err = util.WrapErr(err, e)
+				}
 				return
-			}
-			if er != nil {
-				err = util.WrapErr(err, er)
-			}
+			})
 			return
 		})
 	}
