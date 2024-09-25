@@ -33,14 +33,21 @@ func initApp(contextContext context.Context, bootstrap *conf.Bootstrap, clientCl
 		cleanup()
 		return nil, nil, err
 	}
+	redisFreq, cleanup3, err := data.NewRedisFreq(contextContext, bootstrap, logger)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	messageXHttpClient := data.NewMessageXHttpClient(clientClient, bootstrap)
-	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, messageXHttpClient)
+	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, redisFreq, messageXHttpClient)
 	recipientRepo := data.NewRecipientRepo(databaseMessage)
 	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, campaignRepo, messageRepo, recipientRepo)
 	messageConsumer := consumer.NewMessageConsumer(messageUsecase, logger)
 	queueConsumer := server.NewConsumerMessage(contextContext, bootstrap, logger, messageConsumer)
 	app := newApp(contextContext, bootstrap, logger, queueConsumer)
 	return app, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil

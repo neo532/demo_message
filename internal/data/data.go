@@ -6,6 +6,7 @@ import (
 	klog "github.com/go-kratos/kratos/v2/log"
 	"github.com/neo532/apitool/transport/http/xhttp/client"
 	"github.com/neo532/gokit/database/orm"
+	"github.com/neo532/gokit/database/redis"
 	"github.com/neo532/gokit/queue"
 
 	//"github.com/neo532/gokit/database/redis"
@@ -17,6 +18,7 @@ import (
 type (
 	DatabaseMessage *orm.Orms
 	ProducerMessage *queue.Producers
+	RedisFreq       *redis.Rediss
 	//RedisLock       *redis.Rediss
 )
 
@@ -34,6 +36,11 @@ func NewDatabaseMessage(c context.Context, bs *conf.Bootstrap, logger klog.Logge
 // 	rdbs := newRedis(c, bs.General, bs.Data.RedisLock.Conf, logger)
 // 	return rdbs, rdbs.Cleanup(), rdbs.Err
 // }
+
+func NewRedisFreq(c context.Context, bs *conf.Bootstrap, logger klog.Logger) (RedisFreq, func(), error) {
+	rdbs := newRedis(c, bs.General, bs.Data.RedisFreq.Conf, logger)
+	return rdbs, rdbs.Cleanup(), rdbs.Err
+}
 
 // func NewToolDistributedLock(rdb RedisLock) *tool.DistributedLock {
 // 	return tool.NewDistributedLock(&lredis.GoRedis{Rdb: rdb})

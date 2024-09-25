@@ -122,6 +122,9 @@ message Data {
     message RedisLock {
         Redis conf = 1;
     }
+    message RedisFreq {
+        Redis conf = 1;
+    }
     message ConsumerMessage {
         Consumer conf = 1;
     }
@@ -132,6 +135,7 @@ message Data {
     DatabaseMessage database_message = 10;
 
     RedisLock redis_lock = 21;
+    RedisFreq redis_freq = 22;
 
     ProducerMessage producer_message = 30;
     ConsumerMessage consumer_message = 40;

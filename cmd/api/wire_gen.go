@@ -36,8 +36,14 @@ func initApp(contextContext context.Context, bootstrap *conf.Bootstrap, clientCl
 		cleanup()
 		return nil, nil, err
 	}
+	redisFreq, cleanup3, err := data.NewRedisFreq(contextContext, bootstrap, logger)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	messageXHttpClient := data.NewMessageXHttpClient(clientClient, bootstrap)
-	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, messageXHttpClient)
+	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, redisFreq, messageXHttpClient)
 	recipientRepo := data.NewRecipientRepo(databaseMessage)
 	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, campaignRepo, messageRepo, recipientRepo)
 	campaignApi := api.NewCampaignApi(campaignUsecase, campaignRepo, messageUsecase, logger)
@@ -46,6 +52,7 @@ func initApp(contextContext context.Context, bootstrap *conf.Bootstrap, clientCl
 	router := server.InitHTTPRouter(httpServer, campaignApi, messageApi, systemApi)
 	app := newApp(contextContext, bootstrap, httpServer, router, logger)
 	return app, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil
@@ -66,11 +73,18 @@ func InitDemo(clientClient client.Client) (*biz.MessageUsecase, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
+	redisFreq, cleanup3, err := data.NewRedisFreq(contextContext, bootstrap, logger)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	messageXHttpClient := data.NewMessageXHttpClient(clientClient, bootstrap)
-	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, messageXHttpClient)
+	messageRepo := data.NewMessageRepo(databaseMessage, producerMessage, redisFreq, messageXHttpClient)
 	recipientRepo := data.NewRecipientRepo(databaseMessage)
 	messageUsecase := biz.NewMessageUsecase(transactionMessageRepo, campaignRepo, messageRepo, recipientRepo)
 	return messageUsecase, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil

@@ -10,6 +10,7 @@ var ProviderSet = wire.NewSet(
 	NewDatabaseMessage,
 	NewMessageXHttpClient,
 	NewProducerMessage,
+	NewRedisFreq,
 	NewMessageRepo,
 	NewRecipientRepo,
 	NewTransactionMessageRepo,

@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/neo532/gofr/gofunc"
+	"github.com/neo532/gofr/tool"
 	"github.com/neo532/gokit/database/orm"
+	"github.com/neo532/gokit/database/redis"
 	"github.com/neo532/gokit/middleware/tracing"
 	"github.com/neo532/gokit/queue"
 	"github.com/pkg/errors"
@@ -23,6 +26,8 @@ import (
 type MessageRepo struct {
 	db   *orm.Orms
 	pdc  *queue.Producers
+	rdb  *redis.Rediss
+	freq *tool.Freq
 	xclt *message.MessageXHttpClient
 	tag  string
 }
@@ -30,12 +35,17 @@ type MessageRepo struct {
 func NewMessageRepo(
 	db DatabaseMessage,
 	pdc ProducerMessage,
+	rdb RedisFreq,
 	xclt *message.MessageXHttpClient,
 ) repo.MessageRepo {
+	freq := tool.NewFreq(&rDb{rdb})
+	freq.Timezone("Local")
+
 	return &MessageRepo{
 		tag:  "internal/data/message",
 		db:   db,
 		pdc:  pdc,
+		freq: freq,
 		xclt: xclt,
 	}
 }
@@ -87,6 +97,19 @@ func (r *MessageRepo) Send(c context.Context, msgs []*entity.Message) (succIDs, 
 	failIDs = make([]int64, l, l)
 
 	fn := func(i int) (err error) {
+
+		preKey := strings.NewReplacer("{duration}", time.Now().Format("2006-01-02_15:04")).Replace("sendmessge_{duration}")
+		rule := []tool.FreqRule{
+			tool.FreqRule{Duri: "60", Times: 100},
+		}
+
+		for {
+			if ok, err := r.freq.IncrCheck(c, preKey, rule...); err == nil && ok {
+				break
+			}
+			time.Sleep(time.Second)
+		}
+
 		msg := msgs[i]
 		if msg.Campaign == nil || msg.Recipient == nil {
 			err = errors.New(r.tag + ".Send has empty param")
@@ -111,6 +134,7 @@ func (r *MessageRepo) Send(c context.Context, msgs []*entity.Message) (succIDs, 
 		succIDs[i] = msg.ID
 		return
 	}
+	//
 
 	log := &gofunc.DefaultLogger{}
 	gofn := gofunc.NewGoFunc(gofunc.WithLogger(log), gofunc.WithMaxGoroutine(20))

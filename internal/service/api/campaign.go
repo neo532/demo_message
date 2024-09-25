@@ -57,7 +57,7 @@ func (a *CampaignApi) Post(c context.Context, req *pb.PostRequest) (reply *pb.Po
 		OriginContent: req.OriginContent,
 		MessageType:   int(req.MessageType),
 		Message:       req.Message,
-		TimeSend:      time.Now(),
+		TimeSend:      time.Now().Add(10000 * time.Second),
 	}
 	if req.TimeSend != "" {
 		if cp.TimeSend, err = time.Parse(time.DateTime, req.TimeSend); err != nil {
@@ -79,8 +79,8 @@ func (a *CampaignApi) Post(c context.Context, req *pb.PostRequest) (reply *pb.Po
 	reader := bufio.NewReader(fileR)
 
 	var line string
-	pageSize := 2
-	lRunning := 10
+	pageSize := 5000
+	lRunning := 200
 	msgs := make([]*entity.Message, 0, pageSize)
 	var wg sync.WaitGroup
 	var lock sync.Mutex

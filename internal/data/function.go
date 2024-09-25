@@ -98,3 +98,16 @@ func newProducer(c context.Context, cfg *conf.Data_Producer, logger klog.Logger)
 }
 
 // ========== /Producer ==========
+
+// ========== rDb ==========
+type rDb struct {
+	cache *redis.Rediss
+}
+
+func (l *rDb) Eval(c context.Context, cmd string, keys []string, args []interface{}) (rst interface{}, err error) {
+	return l.cache.Rdb(c).Eval(c, cmd, keys, args...).Result()
+}
+func (l *rDb) Get(c context.Context, key string) (rst string, err error) {
+	rst, err = l.cache.Rdb(c).Get(c, key).Result()
+	return
+}

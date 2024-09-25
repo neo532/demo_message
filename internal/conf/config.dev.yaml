@@ -16,7 +16,7 @@ general:
 server:
   http:
     addr: 0.0.0.0:8500
-    timeout: 3s
+    timeout: 300s
 
 
 data:
@@ -45,6 +45,14 @@ data:
         addr: test.domain:6379
         password: password
 
+  redis_freq:
+    conf:
+      max_slowtime: 0.5s
+      default:
+        name: freq
+        db: 0
+        addr: 127.0.0.1:6379
+        password: 
 
   producer_message:
     conf:
